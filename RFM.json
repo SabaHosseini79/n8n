@@ -14,17 +14,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/orders?select=*",
+        "url": "[your_key]/orders?select=*",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -72,17 +72,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/customer_segments?on_conflict=customer_id",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
