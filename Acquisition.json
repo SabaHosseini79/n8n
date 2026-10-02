@@ -1,0 +1,717 @@
+{
+  "name": "Acquisition",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        144
+      ],
+      "id": "9a9dbcae-a217-4dba-b9b2-011e9796270f",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/acquisition?select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -256,
+        144
+      ],
+      "id": "1a6512ac-ba5e-47a0-9911-b856a8c36406",
+      "name": "Get Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst firstOrder = {};\n\nfor (const row of rows) {\n  const customerId = row.customer_id;\n  const date = new Date(row.order_date);\n\n  if (\n    !firstOrder[customerId] ||\n    date < new Date(firstOrder[customerId].first_order_date)\n  ) {\n    firstOrder[customerId] = {\n      customer_id: customerId,\n      first_order_date: row.order_date,\n      channel: row.channel\n    };\n  }\n}\n\nreturn Object.values(firstOrder).map(x => ({\n  json: {\n    customer_id: x.customer_id,\n    acquisition_date: x.first_order_date,\n    acquisition_month: x.first_order_date.substring(0, 7),\n    channel: x.channel\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -432
+      ],
+      "id": "47f01274-0e87-4422-9063-db096047273f",
+      "name": "Prepare Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all().map(i => i.json);\n\nconst result = {};\n\nfor (const row of data) {\n  const channel = row.channel;\n\n  if (!result[channel]) {\n    result[channel] = 0;\n  }\n\n  result[channel]++;\n}\n\nreturn Object.entries(result)\n  .map(([channel, new_customers]) => ({\n    json: {\n      channel,\n      new_customers\n    }\n  }))\n  .sort((a, b) => b.json.new_customers - a.json.new_customers);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -528
+      ],
+      "id": "b13f9507-ad20-4e23-9d8b-bff4ad55c1c3",
+      "name": "New Customers by Channel"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all().map(i => i.json);\n\nconst result = {};\n\nfor (const row of data) {\n  const month = row.acquisition_date?.substring(0, 7);\n\n  if (!month) continue;\n\n  if (!result[month]) {\n    result[month] = 0;\n  }\n\n  result[month]++;\n}\n\nreturn Object.entries(result)\n  .map(([acquisition_month, new_customers]) => ({\n    json: {\n      acquisition_month,\n      new_customers\n    }\n  }))\n  .sort((a, b) =>\n    a.json.acquisition_month.localeCompare(b.json.acquisition_month)\n  );"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -336
+      ],
+      "id": "c12453d0-3748-48ba-9a68-bdffdd6f72a4",
+      "name": "New Customers by Month"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $items(\"Get Data\").map(i => i.json);\n\nconst result = {};\n\nfor (const row of data) {\n  const channel = row.channel;\n\n  if (!result[channel]) {\n    result[channel] = {\n      customers: new Set(),\n      total_orders: 0,\n      total_revenue: 0\n    };\n  }\n\n  result[channel].customers.add(row.customer_id);\n  result[channel].total_orders++;\n  result[channel].total_revenue += Number(row.order_amount || 0);\n}\n\nreturn Object.entries(result).map(([channel, data]) => ({\n  json: {\n    channel,\n    customers: data.customers.size,\n    total_orders: data.total_orders,\n    total_revenue: data.total_revenue\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -144
+      ],
+      "id": "4cef364b-79bb-4e34-8321-d93df0fe891c",
+      "name": "Revenue by Channel"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $items(\"Get Data\").map(i => i.json);\n\nconst result = {};\n\nfor (const row of data) {\n  const channel = row.channel;\n\n  if (!result[channel]) {\n    result[channel] = {\n      orders: 0,\n      revenue: 0\n    };\n  }\n\n  result[channel].orders++;\n  result[channel].revenue += Number(row.order_amount || 0);\n}\n\nreturn Object.entries(result).map(([channel, data]) => ({\n  json: {\n    channel,\n    total_orders: data.orders,\n    total_revenue: data.revenue,\n    AOV: data.revenue / data.orders\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        240
+      ],
+      "id": "6e48e353-b6dc-41aa-8fbc-c0026233a56c",
+      "name": "AOV by Channel"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $items(\"Get Data\").map(i => i.json);\n\nconst result = {};\n\nfor (const row of data) {\n  const channel = row.channel;\n\n  if (!result[channel]) {\n    result[channel] = {\n      customers: new Set(),\n      revenue: 0\n    };\n  }\n\n  result[channel].customers.add(row.customer_id);\n  result[channel].revenue += Number(row.order_amount || 0);\n}\n\nreturn Object.entries(result).map(([channel, data]) => ({\n  json: {\n    channel,\n    customers: data.customers.size,\n    total_revenue: data.revenue,\n    revenue_per_customer:\n      data.revenue / data.customers.size\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        48
+      ],
+      "id": "c1ebc48d-f3ec-4586-8d09-c1d791f5e695",
+      "name": "Revenue per Customer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $items(\"Get Data\").map(i => i.json);\n\nconst customers = {};\n\nfor (const row of data) {\n  const key = `${row.channel}_${row.customer_id}`;\n\n  if (!customers[key]) {\n    customers[key] = {\n      channel: row.channel,\n      orders: 0\n    };\n  }\n\n  customers[key].orders++;\n}\n\nconst result = {};\n\nfor (const customer of Object.values(customers)) {\n  const channel = customer.channel;\n\n  if (!result[channel]) {\n    result[channel] = {\n      customers: 0,\n      repeat_customers: 0\n    };\n  }\n\n  result[channel].customers++;\n\n  if (customer.orders > 1) {\n    result[channel].repeat_customers++;\n  }\n}\n\nreturn Object.entries(result).map(([channel, data]) => ({\n  json: {\n    channel,\n    customers: data.customers,\n    repeat_customers: data.repeat_customers,\n    repeat_rate:\n      (data.repeat_customers / data.customers) * 100\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        432
+      ],
+      "id": "bc79eb78-cb16-4c83-b9b2-c53ee9a1e87d",
+      "name": "Repeat Purchase Rate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $items(\"Get Data\").map(i => i.json);\n\nconst firstOrder = {};\n\nfor (const row of data) {\n  const id = row.customer_id;\n\n  if (\n    !firstOrder[id] ||\n    new Date(row.order_date) <\n    new Date(firstOrder[id])\n  ) {\n    firstOrder[id] = row.order_date;\n  }\n}\n\nconst result = {};\n\nfor (const row of data) {\n  const channel = row.channel;\n\n  if (!result[channel]) {\n    result[channel] = {\n      first_order_revenue: 0,\n      repeat_revenue: 0,\n      total_revenue: 0\n    };\n  }\n\n  const amount = Number(row.order_amount || 0);\n\n  if (row.order_date === firstOrder[row.customer_id]) {\n    result[channel].first_order_revenue += amount;\n  } else {\n    result[channel].repeat_revenue += amount;\n  }\n\n  result[channel].total_revenue += amount;\n}\n\nreturn Object.entries(result).map(([channel, data]) => ({\n  json: {\n    channel,\n    first_order_revenue: data.first_order_revenue,\n    repeat_revenue: data.repeat_revenue,\n    total_revenue: data.total_revenue\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        624
+      ],
+      "id": "91398117-7843-42b4-a616-ac92dd014d4c",
+      "name": "First vs Repeat Revenue"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/channel_analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "new_customers",
+              "value": "={{ $json.new_customers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -528
+      ],
+      "id": "aa0d2a72-6738-430a-9e0e-ff121a7bad53",
+      "name": "Save Channel Analysis"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/month_analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "acquisition_month",
+              "value": "={{ $json.acquisition_month }}"
+            },
+            {
+              "name": "new_customers",
+              "value": "={{ $json.new_customers }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -336
+      ],
+      "id": "95ae3dbd-c992-4166-ab6b-0d05336de1b4",
+      "name": "Save Month Analysis"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/revenue_analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "new_customers",
+              "value": "={{ $json.new_customers }}"
+            },
+            {
+              "name": "total_orders",
+              "value": "={{ $json.total_orders }}"
+            },
+            {
+              "name": "total_revenue",
+              "value": "={{ $json.total_revenue }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        -144
+      ],
+      "id": "e6a23088-5124-4c0c-bb6e-ac0cf61f1953",
+      "name": "Save Revenue Analysis"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/aov_analysis",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "total_orders",
+              "value": "={{ $json.total_orders }}"
+            },
+            {
+              "name": "total_revenue",
+              "value": "={{ $json.total_revenue }}"
+            },
+            {
+              "name": "aov",
+              "value": "={{ $json.AOV }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        240
+      ],
+      "id": "11a8824d-679a-41f6-a8ea-ab081e278bd8",
+      "name": "Save AOV Analysis"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/customer_value",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "customers",
+              "value": "={{ $json.customers }}"
+            },
+            {
+              "name": "total_revenue",
+              "value": "={{ $json.total_revenue }}"
+            },
+            {
+              "name": "revenue_per_customer",
+              "value": "={{ $json.revenue_per_customer }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        48
+      ],
+      "id": "0d238950-9bf7-4e62-a7b4-67a889abe944",
+      "name": "Save Customer Value"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/repeat_rate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "customers",
+              "value": "={{ $json.customers }}"
+            },
+            {
+              "name": "repeat_customers",
+              "value": "={{ $json.repeat_customers }}"
+            },
+            {
+              "name": "repeat_rate",
+              "value": "={{ $json.repeat_rate }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        432
+      ],
+      "id": "37d62ae1-53ce-466b-b8d4-4c68ef73efa3",
+      "name": "Save Repeat Rate"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/revenue_split",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Profile",
+              "value": "acquisition"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "channel",
+              "value": "={{ $json.channel }}"
+            },
+            {
+              "name": "first_order_revenue",
+              "value": "={{ $json.first_order_revenue }}"
+            },
+            {
+              "name": "repeat_revenue",
+              "value": "={{ $json.repeat_revenue }}"
+            },
+            {
+              "name": "total_revenue",
+              "value": "={{ $json.total_revenue }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        624
+      ],
+      "id": "6215bd0a-bc6d-4792-a593-0c4fb094886c",
+      "name": "Save Revenue Split"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Revenue by Channel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AOV by Channel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Revenue per Customer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Repeat Purchase Rate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "First vs Repeat Revenue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data": {
+      "main": [
+        [
+          {
+            "node": "New Customers by Channel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "New Customers by Month",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Customers by Channel": {
+      "main": [
+        [
+          {
+            "node": "Save Channel Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Customers by Month": {
+      "main": [
+        [
+          {
+            "node": "Save Month Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revenue by Channel": {
+      "main": [
+        [
+          {
+            "node": "Save Revenue Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AOV by Channel": {
+      "main": [
+        [
+          {
+            "node": "Save AOV Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revenue per Customer": {
+      "main": [
+        [
+          {
+            "node": "Save Customer Value",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Repeat Purchase Rate": {
+      "main": [
+        [
+          {
+            "node": "Save Repeat Rate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First vs Repeat Revenue": {
+      "main": [
+        [
+          {
+            "node": "Save Revenue Split",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "055df4f4-1ecb-47e3-bd05-8fae4fe82c15",
+  "meta": {
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "K2L14JVhXnoKu9Dl",
+  "tags": []
+}

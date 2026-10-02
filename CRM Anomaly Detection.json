@@ -1,0 +1,386 @@
+{
+  "name": "CRM Anomaly Detection",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -640,
+        -128
+      ],
+      "id": "85d981e2-f32b-42c2-a793-fe743c77d942",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/crmleads?select=*&created_at=gte.2026-03-25T00:00:00&created_at=lt.2026-03-25T23:59:59&limit=10000",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -192,
+        -128
+      ],
+      "id": "fd526dcb-5779-41b9-95ca-571c0679fc25",
+      "name": "Get Today's Events"
+    },
+    {
+      "parameters": {
+        "jsCode": "const selectedDate = '2026-03-25';  // ✅ تاریخ دیگری\n\nreturn {\n  date: selectedDate,\n  startTime: `${selectedDate}T00:00:00`,\n  endTime: `${selectedDate}T23:59:59`\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        -128
+      ],
+      "id": "de338bba-0ed6-4929-820e-b61b8421d218",
+      "name": "Date"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_snapshots",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $node['KPI_Seg_Funnel'].json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        -32
+      ],
+      "id": "e8a90fd4-1380-4bc9-bbe2-42f162a479d1",
+      "name": "daily_snapshots"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.all();\nconst records = input.map(item => item.json || item).filter(r => r);\n\n// ===== KPI =====\nconst grouped = {};\nrecords.forEach(row => {\n  const date = row.created_at.split('T')[0];\n  if (!grouped[date]) {\n    grouped[date] = { date, total_leads: 0, won_leads: 0 };\n  }\n  grouped[date].total_leads++;\n  if (row.status === 'Won') grouped[date].won_leads++;\n});\n\nconst kpi = Object.values(grouped)[0];\nconst conversion_rate = Math.round((kpi.won_leads / kpi.total_leads) * 10000) / 100;\n\n// ===== SEGMENTS =====\nconst bySource = {}, byRep = {}, byType = {}, byCity = {};\n\nrecords.forEach(row => {\n  // Source\n  if (!bySource[row.source]) {\n    bySource[row.source] = { segment_type: 'source', segment_value: row.source, current_leads: 0, current_won: 0 };\n  }\n  bySource[row.source].current_leads++;\n  if (row.status === 'Won') bySource[row.source].current_won++;\n\n  // Rep\n  if (!byRep[row.sales_rep]) {\n    byRep[row.sales_rep] = { segment_type: 'sales_rep', segment_value: row.sales_rep, current_leads: 0, current_won: 0 };\n  }\n  byRep[row.sales_rep].current_leads++;\n  if (row.status === 'Won') byRep[row.sales_rep].current_won++;\n\n  // Type\n  if (!byType[row.lead_type]) {\n    byType[row.lead_type] = { segment_type: 'lead_type', segment_value: row.lead_type, current_leads: 0, current_won: 0 };\n  }\n  byType[row.lead_type].current_leads++;\n  if (row.status === 'Won') byType[row.lead_type].current_won++;\n\n  // City\n  if (!byCity[row.city]) {\n    byCity[row.city] = { segment_type: 'city', segment_value: row.city, current_leads: 0, current_won: 0 };\n  }\n  byCity[row.city].current_leads++;\n  if (row.status === 'Won') byCity[row.city].current_won++;\n});\n\nconst allSegments = [\n  ...Object.values(bySource),\n  ...Object.values(byRep),\n  ...Object.values(byType),\n  ...Object.values(byCity)\n].map(s => ({\n  ...s,\n  current_conversion: Math.round((s.current_won / s.current_leads) * 10000) / 100\n}));\n\n// ===== FUNNEL =====\nconst totalLeads = records.length;\nconst contacted = records.filter(r => ['Contacted', 'Qualified', 'Proposal', 'Won'].includes(r.stage)).length;\nconst qualified = records.filter(r => ['Qualified', 'Proposal', 'Won'].includes(r.stage)).length;\nconst proposal = records.filter(r => ['Proposal', 'Won'].includes(r.stage)).length;\nconst won = records.filter(r => r.status === 'Won').length;\n\nconst funnel = [\n  { stage: 'Lead', total_at_stage: totalLeads, moved_to_next: contacted, conversion_rate: Math.round((contacted / totalLeads) * 10000) / 100 },\n  { stage: 'Contacted', total_at_stage: contacted, moved_to_next: qualified, conversion_rate: contacted > 0 ? Math.round((qualified / contacted) * 10000) / 100 : 0 },\n  { stage: 'Qualified', total_at_stage: qualified, moved_to_next: proposal, conversion_rate: qualified > 0 ? Math.round((proposal / qualified) * 10000) / 100 : 0 },\n  { stage: 'Proposal', total_at_stage: proposal, moved_to_next: won, conversion_rate: proposal > 0 ? Math.round((won / proposal) * 10000) / 100 : 0 }\n];\n\n// ===== MERGE ALL =====\nreturn {\n  snapshot_date: '2026-03-25',  // ✅ عوض شد\n  total_leads: kpi.total_leads,\n  won_leads: kpi.won_leads,\n  conversion_rate: conversion_rate,\n  segments_by_source: JSON.stringify(allSegments.filter(s => s.segment_type === 'source')),\n  segments_by_rep: JSON.stringify(allSegments.filter(s => s.segment_type === 'sales_rep')),\n  segments_by_type: JSON.stringify(allSegments.filter(s => s.segment_type === 'lead_type')),\n  segments_by_city: JSON.stringify(allSegments.filter(s => s.segment_type === 'city')),\n  funnel_stages: JSON.stringify(funnel)\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -128
+      ],
+      "id": "6306b96f-f07f-497d-aba1-f83ff59dd5bf",
+      "name": "KPI_Seg_Funnel"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_snapshots?snapshot_date=eq.2026-03-24&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        256,
+        -224
+      ],
+      "id": "b33ee899-1383-44b4-a9be-e4200ad80cdb",
+      "name": "Fetch Yesterday"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "073190de-2b41-4580-b4a9-d9e762e76cf5",
+              "leftValue": "={{ $json.shouldAlert }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        608,
+        -224
+      ],
+      "id": "fefceb44-bb95-4d99-9cf1-46375760896f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/crm_alerts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"alert_date\": \"{{ $node['Comparison'].json.today.snapshot_date }}\",\n  \"conversion_rate_change_percent\": {{ $node['Comparison'].json.conversionChange }},\n  \"today_conversion_rate\": {{ $node['Comparison'].json.today.conversion_rate }},\n  \"yesterday_conversion_rate\": {{ $node['Comparison'].json.yesterday.conversion_rate }},\n  \"today_total_leads\": {{ $node['Comparison'].json.today.total_leads }},\n  \"today_won_leads\": {{ $node['Comparison'].json.today.won_leads }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1024,
+        -144
+      ],
+      "id": "f6db8de2-3101-4d28-96a6-4b0649c158c7",
+      "name": "Save Alert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = $node['KPI_Seg_Funnel'].json;\nconst yesterday = $input.all()[0].json;\n\nconst conversionChange = ((today.conversion_rate - yesterday.conversion_rate) / yesterday.conversion_rate) * 100;\n\nreturn {\n  today,\n  yesterday,\n  conversionChange: Math.round(conversionChange * 100) / 100,\n  shouldAlert: conversionChange <= -10\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        -224
+      ],
+      "id": "a8fc2b82-9f0f-4f00-9974-b3495fc47451",
+      "name": "Comparison"
+    },
+    {
+      "parameters": {
+        "chatId": "6297377855",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        -336
+      ],
+      "id": "50881234-5956-4bfe-91c2-a2d76e98efbf",
+      "name": "Telegram Alert",
+      "webhookId": "bb14d9c6-4958-4d68-916e-22307add0bfa",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const comp = $input.all()[0].json;\n\n// Parse segments\nconst parseJSON = (str) => {\n  try {\n    return typeof str === 'string' ? JSON.parse(str) : str;\n  } catch {\n    return [];\n  }\n};\n\nconst todaySource = parseJSON(comp.today.segments_by_source);\nconst yesterdaySource = parseJSON(comp.yesterday.segments_by_source);\nconst todayRep = parseJSON(comp.today.segments_by_rep);\nconst yesterdayRep = parseJSON(comp.yesterday.segments_by_rep);\nconst todayType = parseJSON(comp.today.segments_by_type);\nconst yesterdayType = parseJSON(comp.yesterday.segments_by_type);\nconst todayCity = parseJSON(comp.today.segments_by_city);\nconst yesterdayCity = parseJSON(comp.yesterday.segments_by_city);\nconst todayFunnel = parseJSON(comp.today.funnel_stages);\nconst yesterdayFunnel = parseJSON(comp.yesterday.funnel_stages);\n\n// Function to calculate ABSOLUTE changes\nconst calcChanges = (today, yesterday) => {\n  return today.map(t => {\n    const y = yesterday.find(x => x.segment_value === t.segment_value) || {};\n    const change = t.current_conversion - (y.current_conversion || 0);\n    return { ...t, previous_conversion: y.current_conversion || 0, change: Math.round(change * 100) / 100 };\n  });\n};\n\n// Calculate all changes\nconst sourceChanges = calcChanges(todaySource, yesterdaySource);\nconst repChanges = calcChanges(todayRep, yesterdayRep);\nconst typeChanges = calcChanges(todayType, yesterdayType);\nconst cityChanges = calcChanges(todayCity, yesterdayCity);\n\n// Find worst in each category\nconst worstSource = sourceChanges.sort((a, b) => a.change - b.change)[0];\nconst worstRep = repChanges.sort((a, b) => a.change - b.change)[0];\nconst worstType = typeChanges.sort((a, b) => a.change - b.change)[0];\nconst worstCity = cityChanges.sort((a, b) => a.change - b.change)[0];\n\n// Analyze funnel (absolute)\nconst funnelAnalysis = todayFunnel.map(t => {\n  const y = yesterdayFunnel.find(x => x.stage === t.stage) || {};\n  const change = t.conversion_rate - (y.conversion_rate || 0);\n  return { ...t, previous_rate: y.conversion_rate || 0, change: Math.round(change * 100) / 100 };\n});\n\nconst worstFunnel = funnelAnalysis.sort((a, b) => a.change - b.change)[0];\n\n// Helper function for 2 decimals\nconst fmt = (num) => Math.round(num * 100) / 100;\n\n// Build message\nconst msg = `🚨 هشدار CRM\n\n📊 کاهش کلی: ${fmt(comp.today.conversion_rate - comp.yesterday.conversion_rate)}%\nامروز: ${fmt(comp.today.conversion_rate)}% | دیروز: ${fmt(comp.yesterday.conversion_rate)}%\n\n📌 ضعیف‌ترین منبع:\n${worstSource.segment_value}: ${worstSource.change > 0 ? '+' : ''}${fmt(worstSource.change)}%\n(امروز: ${fmt(worstSource.current_conversion)}% | دیروز: ${fmt(worstSource.previous_conversion)}%)\n\n👤 فروشنده با کم‌ترین عملکرد:\n${worstRep.segment_value}: ${worstRep.change > 0 ? '+' : ''}${fmt(worstRep.change)}%\n(امروز: ${fmt(worstRep.current_conversion)}% | دیروز: ${fmt(worstRep.previous_conversion)}%)\n\n🏷️ نوع لید با کم‌ترین تبدیل:\n${worstType.segment_value}: ${worstType.change > 0 ? '+' : ''}${fmt(worstType.change)}%\n(امروز: ${fmt(worstType.current_conversion)}% | دیروز: ${fmt(worstType.previous_conversion)}%)\n\n📍 شهر با کم‌ترین تبدیل:\n${worstCity.segment_value}: ${worstCity.change > 0 ? '+' : ''}${fmt(worstCity.change)}%\n(امروز: ${fmt(worstCity.current_conversion)}% | دیروز: ${fmt(worstCity.previous_conversion)}%)\n\n🔻 ضعیف‌ترین مرحله فروش:\n${worstFunnel.stage}: ${worstFunnel.change > 0 ? '+' : ''}${fmt(worstFunnel.change)}%\n(امروز: ${fmt(worstFunnel.conversion_rate)}% | دیروز: ${fmt(worstFunnel.previous_rate)}%)`;\n\nreturn { message: msg };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -240
+      ],
+      "id": "80c43345-3dbc-4d8c-9b4d-67c36e3b9660",
+      "name": "Telegram Message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Events": {
+      "main": [
+        [
+          {
+            "node": "KPI_Seg_Funnel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KPI_Seg_Funnel": {
+      "main": [
+        [
+          {
+            "node": "daily_snapshots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Yesterday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Yesterday": {
+      "main": [
+        [
+          {
+            "node": "Comparison",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Telegram Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comparison": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Alert": {
+      "main": [
+        []
+      ]
+    },
+    "Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "070400ec-4b36-447e-8c33-514678f5f8eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "YeShsqwlKdRooaR9",
+  "tags": []
+}

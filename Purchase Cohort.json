@@ -1,0 +1,239 @@
+{
+  "name": "Purchase Cohort",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        16
+      ],
+      "id": "fabcf122-f6a0-4fd3-a220-d92c409b8426",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/cohort?select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -640,
+        16
+      ],
+      "id": "49604da0-9a0e-48da-ad94-1f1d3903becd",
+      "name": "Get Cohort"
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.all().map(item => item.json);\n\nconst customers = {};\n\nfor (const order of orders) {\n  const customerId = order.customer_id;\n  const orderDate = new Date(order.order_date);\n\n  if (!customers[customerId]) {\n    customers[customerId] = {\n      customer_id: customerId,\n      customer_name: order.customer_name,\n      first_purchase_date: order.order_date\n    };\n  }\n\n  // پیدا کردن اولین خرید\n  if (\n    orderDate <\n    new Date(customers[customerId].first_purchase_date)\n  ) {\n    customers[customerId].first_purchase_date = order.order_date;\n  }\n}\n\nconst result = Object.values(customers).map(customer => {\n\n  const firstPurchase = new Date(\n    customer.first_purchase_date\n  );\n\n  // تبدیل اولین خرید به اولین روز ماه\n  const cohortMonth =\n    `${firstPurchase.getUTCFullYear()}-${String(\n      firstPurchase.getUTCMonth() + 1\n    ).padStart(2, '0')}-01`;\n\n  return {\n    json: {\n      customer_id: customer.customer_id,\n      customer_name: customer.customer_name,\n      first_purchase_date:\n        customer.first_purchase_date,\n      cohort_month: cohortMonth\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        16
+      ],
+      "id": "8f6952df-62c0-45a8-a7c0-1a485fa12484",
+      "name": "Build Customer Cohort"
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $('Get Cohort').all();\nconst customers = $input.all();\n\n// ساخت Map برای Cohort هر مشتری\nconst cohortMap = {};\n\nfor (const item of customers) {\n  const customer = item.json;\n\n  cohortMap[customer.customer_id] = {\n    cohort_month: customer.cohort_month\n  };\n}\n\nconst result = orders.map(item => {\n  const order = item.json;\n  const cohort = cohortMap[order.customer_id];\n\n  if (!cohort) {\n    return null;\n  }\n\n  const orderDate = new Date(order.order_date);\n\n  const orderMonth =\n    `${orderDate.getUTCFullYear()}-${String(\n      orderDate.getUTCMonth() + 1\n    ).padStart(2, '0')}-01`;\n\n  return {\n    json: {\n      order_id: order.order_id,\n      customer_id: order.customer_id,\n      customer_name: order.customer_name,\n      order_date: order.order_date,\n      order_month: orderMonth,\n      cohort_month: cohort.cohort_month,\n      amount: Number(order.amount) || 0\n    }\n  };\n}).filter(item => item !== null);\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "11af80b7-249a-4c30-bf47-7f9b6a8cab0e",
+      "name": "Build Cohort Orders"
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.all();\n\nconst result = orders.map(item => {\n  const o = item.json;\n\n  const cohortDate = new Date(o.cohort_month);\n  const orderDate = new Date(o.order_month);\n\n  const monthNumber =\n    (orderDate.getUTCFullYear() - cohortDate.getUTCFullYear()) * 12 +\n    (orderDate.getUTCMonth() - cohortDate.getUTCMonth());\n\n  return {\n    json: {\n      ...o,\n      month_number: monthNumber\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        16
+      ],
+      "id": "80c18f62-f9c4-4c78-9a5d-48a6b91979f3",
+      "name": "Calculate Month Number"
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $input.all();\n\n// برای هر cohort و هر month_number\n// مشتری‌های یکتا را نگه می‌داریم\nconst groups = {};\n\nfor (const item of orders) {\n  const o = item.json;\n\n  const key = `${o.cohort_month}_${o.month_number}`;\n\n  if (!groups[key]) {\n    groups[key] = {\n      cohort_month: o.cohort_month,\n      month_number: o.month_number,\n      customers: new Set()\n    };\n  }\n\n  groups[key].customers.add(o.customer_id);\n}\n\nconst result = Object.values(groups).map(group => {\n  return {\n    json: {\n      cohort_month: group.cohort_month,\n      month_number: group.month_number,\n      customer_count: group.customers.size\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        16
+      ],
+      "id": "5967edb3-fc4b-43d9-afc1-3df4388014af",
+      "name": "Aggregate Cohort Customers"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all();\n\n// پیدا کردن تعداد مشتری‌های ماه 0 هر Cohort\nconst cohortSizes = {};\n\nfor (const item of data) {\n  const row = item.json;\n\n  if (row.month_number === 0) {\n    cohortSizes[row.cohort_month] = row.customer_count;\n  }\n}\n\n// محاسبه Retention Rate\nconst result = data.map(item => {\n  const row = item.json;\n\n  const cohortSize = cohortSizes[row.cohort_month];\n\n  const retentionRate =\n    (row.customer_count / cohortSize) * 100;\n\n  return {\n    json: {\n      cohort_month: row.cohort_month,\n      month_number: row.month_number,\n      customer_count: row.customer_count,\n      retention_rate: Number(retentionRate.toFixed(2))\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        16
+      ],
+      "id": "5512577f-a8e5-4a26-9a55-2963a6b652a7",
+      "name": "Calculate Retention"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/cohort_retention?on_conflict=customer_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_id\": \"{{ $json.customer_id }}\",\n  \"customer_name\": \"{{ $json.customer_name }}\",\n  \"recency\": {{ $json.Recency }},\n  \"frequency\": {{ $json.Frequency }},\n  \"monetary\": {{ $json.Monetary }},\n  \"r_score\": {{ $json.R_Score }},\n  \"f_score\": {{ $json.F_Score }},\n  \"m_score\": {{ $json.M_Score }},\n  \"rfm_score\": \"{{ $json.RFM_Score }}\",\n  \"segment\": \"{{ $json.Segment }}\",\n  \"analysis_date\": \"{{ $json.analysis_date }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        16
+      ],
+      "id": "68e0b453-5670-4ea6-9bdb-7082f08a78ef",
+      "name": "cohort_retention_database"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Cohort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Cohort": {
+      "main": [
+        [
+          {
+            "node": "Build Customer Cohort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Customer Cohort": {
+      "main": [
+        [
+          {
+            "node": "Build Cohort Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cohort Orders": {
+      "main": [
+        [
+          {
+            "node": "Calculate Month Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Month Number": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Cohort Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Cohort Customers": {
+      "main": [
+        [
+          {
+            "node": "Calculate Retention",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Retention": {
+      "main": [
+        [
+          {
+            "node": "cohort_retention_database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "003db190-4fc6-44b9-bf07-db572c7962ce",
+  "meta": {
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "yDGdfBcW7cHY388l",
+  "tags": []
+}

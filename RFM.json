@@ -1,0 +1,167 @@
+{
+  "name": "RFM",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -16
+      ],
+      "id": "133845f1-46b4-4c4f-af82-fabc24ca6170",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/orders?select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "4a481165-ba21-4dea-ac31-5143be777fa7",
+      "name": "Get Orders"
+    },
+    {
+      "parameters": {
+        "jsCode": "const REFERENCE_DATE = new Date('2026-09-15');\n\nconst orders = $input.all().map(item => item.json);\n\n// گروه‌بندی سفارش‌ها بر اساس مشتری\nconst customers = {};\nfor (const o of orders) {\n  const id = o.customer_id;\n  if (!customers[id]) {\n    customers[id] = {\n      customer_id: id,\n      customer_name: o.customer_name,\n      city: o.city,\n      signup_date: o.signup_date,\n      order_dates: [],\n      order_count: 0,\n      total_amount: 0,\n    };\n  }\n  customers[id].order_dates.push(new Date(o.order_date));\n  customers[id].order_count += 1;\n  customers[id].total_amount += Number(o.order_amount) || 0;\n}\n\nconst DAY_MS = 1000 * 60 * 60 * 24;\n\nconst result = Object.values(customers).map(c => {\n  const lastOrder = new Date(Math.max(...c.order_dates.map(d => d.getTime())));\n  const recency = Math.round((REFERENCE_DATE - lastOrder) / DAY_MS);\n  const daysSinceSignup = Math.round((REFERENCE_DATE - new Date(c.signup_date)) / DAY_MS);\n\n  return {\n    json: {\n      customer_id: c.customer_id,\n      customer_name: c.customer_name,\n      city: c.city,\n      signup_date: c.signup_date,\n      last_order_date: lastOrder.toISOString().split('T')[0],\n      days_since_signup: daysSinceSignup,\n      Recency: recency,\n      Frequency: c.order_count,\n      Monetary: c.total_amount,\n    }\n  };\n});\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "306f96fe-45d8-4bf1-a3de-acc770dc9339",
+      "name": "Aggregate By Customer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const customers = $input.all().map(item => item.json);\nconst n = customers.length;\n\n// --- نمره R: بازه‌های مطلق روز ---\nfunction scoreRecency(days) {\n  if (days <= 7) return 5;\n  if (days <= 14) return 4;\n  if (days <= 30) return 3;\n  if (days <= 90) return 2;\n  return 1;\n}\n\n// --- نمره F و M: رتبه‌بندی صدکی با min rank برای مدیریت Tie ---\nfunction quantileScore(values, value) {\n  // min rank: تعداد مقادیر کوچک‌تر + 1  → مقادیر برابر رتبه‌ی یکسان می‌گیرند\n  const rank = values.filter(v => v < value).length + 1;\n  const score = Math.ceil(rank / (n / 5));\n  return Math.min(Math.max(score, 1), 5); // محدود کردن به بازه 1..5\n}\n\nconst frequencies = customers.map(c => c.Frequency);\nconst monetaries = customers.map(c => c.Monetary);\n\nconst scored = customers.map(c => {\n  const R_Score = scoreRecency(c.Recency);\n  const F_Score = quantileScore(frequencies, c.Frequency);\n  const M_Score = quantileScore(monetaries, c.Monetary);\n\n  // --- قوانین سگمنت: به ترتیب، اولین شرط true برنده است ---\n  let Segment;\n  if (c.days_since_signup <= 90 && c.Frequency <= 2) {\n    Segment = 'New Customers';\n  } else if (R_Score >= 4 && F_Score >= 4 && M_Score >= 4) {\n    Segment = 'Champions';\n  } else if (R_Score <= 2 && (F_Score >= 3 || M_Score >= 3)) {\n    Segment = 'At Risk';\n  } else if (R_Score <= 2) {\n    Segment = 'Lost Customers';\n  } else {\n    Segment = 'Loyal Customers';\n  }\n\n  return {\n    json: {\n      customer_id: c.customer_id,\n      customer_name: c.customer_name,\n      Recency: c.Recency,\n      Frequency: c.Frequency,\n      Monetary: c.Monetary,\n      R_Score,\n      F_Score,\n      M_Score,\n      RFM_Score: `${R_Score}${F_Score}${M_Score}`,\n      Segment,\n      analysis_date: '2026-09-15',\n    }\n  };\n});\n\n// مرتب‌سازی: بهترین مشتری‌ها اول\nscored.sort((a, b) => Number(b.json.RFM_Score) - Number(a.json.RFM_Score));\n\nreturn scored;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -16
+      ],
+      "id": "3d26a0a7-df2a-4ca2-9c26-d300773ab292",
+      "name": "Score & Segment"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/customer_segments?on_conflict=customer_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customer_id\": \"{{ $json.customer_id }}\",\n  \"customer_name\": \"{{ $json.customer_name }}\",\n  \"recency\": {{ $json.Recency }},\n  \"frequency\": {{ $json.Frequency }},\n  \"monetary\": {{ $json.Monetary }},\n  \"r_score\": {{ $json.R_Score }},\n  \"f_score\": {{ $json.F_Score }},\n  \"m_score\": {{ $json.M_Score }},\n  \"rfm_score\": \"{{ $json.RFM_Score }}\",\n  \"segment\": \"{{ $json.Segment }}\",\n  \"analysis_date\": \"{{ $json.analysis_date }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "6f85310b-2876-4d76-b524-266dc7920e3f",
+      "name": "Get Orders1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Orders": {
+      "main": [
+        [
+          {
+            "node": "Aggregate By Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate By Customer": {
+      "main": [
+        [
+          {
+            "node": "Score & Segment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score & Segment": {
+      "main": [
+        [
+          {
+            "node": "Get Orders1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19ae9075-84b7-429a-b78d-f063e376a684",
+  "meta": {
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "acqjseptPuuX1acw",
+  "tags": []
+}

@@ -1,0 +1,697 @@
+{
+  "name": "1 Lead",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-inbound",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -288,
+        -128
+      ],
+      "id": "cc9cd020-2b99-433a-8c5a-b3dbbd9a1ea1",
+      "name": "Webhook",
+      "webhookId": "69ee0b69-443a-4903-82a3-d4ec732602a0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a73708e0-d5a4-445d-948f-4e7dc59b49ad",
+              "name": "lead_id",
+              "value": "={{$json.body.lead_id}}",
+              "type": "string"
+            },
+            {
+              "id": "676a9597-ac57-49d4-a8a9-3af2774fb8bd",
+              "name": "lead_name",
+              "value": "={{$json.body.name}}",
+              "type": "string"
+            },
+            {
+              "id": "0aa03f5e-3d76-4339-9b59-c64d1d472d16",
+              "name": "message",
+              "value": "={{$json.body.message}}",
+              "type": "string"
+            },
+            {
+              "id": "32d09c42-8040-46dc-842f-8d055e7d213c",
+              "name": "channel",
+              "value": "={{$json.body.channel}}",
+              "type": "string"
+            },
+            {
+              "id": "4115831a-815c-4df9-a862-8f17c800ce43",
+              "name": "phone",
+              "value": "={{$json.body.phone}}",
+              "type": "string"
+            },
+            {
+              "id": "4ec49934-7851-4d46-8c6d-faee7ad170e1",
+              "name": "email",
+              "value": "={{$json.body.email}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -64,
+        -128
+      ],
+      "id": "8ba1a68c-28e7-4c32-a4e5-7c6914c0bb9d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.message}}",
+        "options": {
+          "systemMessage": "=شما یک دستیار فروش هوش مصنوعی برای کلینیک زیبایی آوا هستید.\n\nاطلاعات کسب‌وکار:\n- توضیحات کسب‌وکار: کلینیک زیبایی آوا با بیش از ۸ سال سابقه، ارائه‌دهنده خدمات پوست، مو و زیبایی زیر نظر پزشک متخصص است. تمامی خدمات با دستگاه‌های روز دنیا و مواد استاندارد وزارت بهداشت انجام می‌شود. ساعات کاری: شنبه تا پنج‌شنبه، ۱۰ صبح تا ۸ شب، جمعه‌ها تعطیل. آدرس: تهران، خیابان ولیعصر، بالاتر از میدان ونک، پلاک ۱۲۴. رزرو نوبت از طریق تلگرام یا فرم سایت انجام می‌شود و تیم فروش ظرف حداکثر ۱ ساعت تماس می‌گیرد.\n\n- محصولات/خدمات و قیمت‌گذاری:\n  فیلر لب: ۳,۵۰۰,۰۰۰ تا ۵,۵۰۰,۰۰۰ تومان، مدت جلسه ۳۰ تا ۴۵ دقیقه.\n  لیزر موهای زائد بدن (تمام بدن): ۲,۸۰۰,۰۰۰ تا ۶,۰۰۰,۰۰۰ تومان بسته به ناحیه، مدت جلسه ۲۰ تا ۶۰ دقیقه.\n  بوتاکس (خط اخم/پیشانی/پنجه کلاغی): ۲,۵۰۰,۰۰۰ تا ۴,۵۰۰,۰۰۰ تومان، مدت جلسه ۱۵ تا ۲۰ دقیقه.\n  فیشیال (پاکسازی پوست + هیدراتاسیون): ۱,۸۰۰,۰۰۰ تا ۳,۲۰۰,۰۰۰ تومان، مدت جلسه ۶۰ دقیقه.\n  نکته: قیمت دقیق پس از معاینه رایگان و بسته به شرایط پوست/بدن مشتری نهایی می‌شود؛ اعداد فوق میانگین بازه قیمتی هستند.\n\n- سوالات متداول:\n  فیلر لب چقدر طول می‌کشد جا بیفتد؟ ۳ تا ۵ روز تورم طبیعی، نتیجه نهایی بعد از ۲ هفته.\n  فیلر لب چند ماه دوام دارد؟ ۶ تا ۱۲ ماه بسته به نوع ژل و متابولیسم بدن.\n  آیا فیلر لب درد دارد؟ قبل از تزریق بی‌حسی موضعی زده می‌شود، درد کم است.\n  برای لیزر چند جلسه لازم است؟ ۶ تا ۸ جلسه با فاصله ۴ تا ۶ هفته، بسته به نوع پوست و تراکم مو.\n  لیزر برای همه پوست‌ها مناسب است؟ بله، دستگاه دایود قابل تنظیم برای انواع پوست است.\n  قبل از لیزر چه آماده‌سازی لازم است؟ تا ۴۸ ساعت قبل موها را با وکس یا بند ابرو از ریشه جدا نکنید، فقط اصلاح با تیغ مجاز است.\n  نتیجه بوتاکس از کی دیده می‌شود؟ از روز سوم تا چهارم شروع، بعد از ۲ هفته کامل می‌شود.\n  بوتاکس چقدر دوام دارد؟ معمولاً ۴ تا ۶ ماه.\n  بعد از بوتاکس چه محدودیتی هست؟ تا ۴ ساعت نباید دراز کشید، تا ۲۴ ساعت از ورزش سنگین و سونا خودداری شود.\n  فیشیال برای چه پوستی مناسب است؟ برای تمام انواع پوست، محصولات بر اساس نوع پوست مشتری تنظیم می‌شود.\n  بعد از فیشیال چه مراقبتی لازم است؟ تا ۲۴ ساعت از آرایش سنگین و تا ۴۸ ساعت از آفتاب مستقیم خودداری شود.\n  فیشیال هر چند وقت توصیه می‌شود؟ هر ۴ تا ۶ هفته یک‌بار.\n\nوظایف شما:\n- پیام‌های ورودی مشتریان را تحلیل کنید.\n- نیاز، هدف خرید و میزان علاقه مشتری را تشخیص دهید.\n- به سوالات مشتریان به صورت دوستانه، کوتاه و حرفه‌ای پاسخ دهید.\n- به تیم فروش کمک کنید لیدها را اولویت‌بندی و پیگیری کنند.\n\nقوانین:\n- فقط از اطلاعاتی که در بخش اطلاعات کسب‌وکار داده شده استفاده کنید.\n- هرگز قیمت، تخفیف، ویژگی، زمان‌بندی یا اطلاعاتی که وجود ندارد را حدس نزنید.\n- اگر سوال مشتری خارج از اطلاعات بالاست (مثلاً مورد پزشکی خاص، بیماری زمینه‌ای یا تداخل دارویی)، اعلام کنید که کارشناس یا پزشک کلینیک برای بررسی دقیق‌تر تماس خواهد گرفت.\n- لحن شما نباید اصراری یا تهاجمی باشد.\n- پاسخ‌ها باید کوتاه، طبیعی و مناسب مکالمه فروش باشند.\n\nبرای هر لید، پیام را تحلیل کنید و فقط یک JSON معتبر با فرمت زیر برگردانید:\n\n{\n  \"reply_message\": \"متنی که باید برای مشتری ارسال شود\",\n  \"lead_score\": 1,\n  \"ready_to_book\": false,\n  \"summary\": \"خلاصه کوتاه از نیاز مشتری و وضعیت مکالمه\"\n}\n\nقوانین امتیازدهی لید:\n- 1 تا 3: علاقه کم، سوال عمومی یا درخواست نامشخص\n- 4 تا 7: علاقه‌مند است اما به اطلاعات بیشتر نیاز دارد\n- 8 تا 10: مشتری بالقوه قوی، آماده خرید، رزرو یا دریافت مشاوره است\n\nاگر مشتری تمایل به رزرو نوبت داشت، این لینک را در پاسخ ارسال کن و بگو از طریق آن می‌تواند وقت دلخواه خود را انتخاب کند:\nhttps://calendar.google.com/... [لینک صفحه‌ی بوکینگ خودت]\n\nمهم:\n- فقط JSON خروجی بدهید.\n- هیچ متن اضافی، توضیح یا Markdown اضافه نکنید."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        -32
+      ],
+      "id": "c3076f09-2f4d-4daf-bd2c-46c11afcde39",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        192
+      ],
+      "id": "290b69ca-1315-4f1e-8676-71280f19b9b7",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "T1x2Nt81R5sicolI",
+          "name": "OpenAI AvalAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "leads",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "lead_id",
+              "fieldValue": "={{ $('Merge').item.json.lead_id }}"
+            },
+            {
+              "fieldId": "lead_name",
+              "fieldValue": "={{ $('Merge').item.json.lead_name }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('Merge').item.json.phone }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('Merge').item.json.email }}"
+            },
+            {
+              "fieldId": "channel",
+              "fieldValue": "={{ $('Merge').item.json.channel }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "new"
+            },
+            {
+              "fieldId": "lead_score",
+              "fieldValue": "={{ JSON.parse($('AI Agent').item.json.output).lead_score }}"
+            },
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ JSON.parse($('AI Agent').item.json.output).summary }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        160
+      ],
+      "id": "f0c18d59-60ce-4a42-b48a-8b3e016949b7",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "1vgmooH7wtjggpuH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6297377855",
+        "text": "=🔔 لید جدید\n\n👤 نام:\n{{ $json.lead_name }}\n\n📞 شماره:\n{{ $json.phone }}\n\n⭐ امتیاز:\n{{ $json.lead_score }}\n\n📝 خلاصه:\n{{ $json.summary }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        64
+      ],
+      "id": "0c5a74ba-155e-425d-a2d8-a604af275efb",
+      "name": "Send a text message",
+      "webhookId": "c0f662b6-d403-4a23-ba5a-846650ea285f",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -288,
+        64
+      ],
+      "id": "75b456f7-32d1-47cf-a6fb-0e510c28964a",
+      "name": "Telegram Trigger",
+      "webhookId": "52804a37-b55d-4694-8951-3f01e296d19e",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8822aa05-1407-4fbf-b86f-d2286e5e801a",
+              "name": "lead_id",
+              "value": "={{ 'telegram_' + $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b77e3e55-5f9d-4735-85c2-ccd385b58652",
+              "name": "lead_name",
+              "value": "={{ $json.message.from.first_name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "c0f5b3da-1739-4f08-b46a-517ec658144a",
+              "name": "message",
+              "value": "={{ $json.message.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "166494df-a2f1-4b1b-b8f4-ee7aa6dc8267",
+              "name": "channel",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "40127219-e9c9-45c7-854c-71294ea8ab53",
+              "name": "phone",
+              "value": "={{ $json.message.from.username ? '@' + $json.message.from.username : 'telegram_id:' + $json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "0bbfebfe-4aa9-4036-89fd-a2651fcf6eae",
+              "name": "email",
+              "value": "={{ '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -64,
+        64
+      ],
+      "id": "3718d02a-a8ab-4d3a-bf95-556dff192a4a",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        160,
+        -32
+      ],
+      "id": "ddd2dd5d-4cab-4b8f-b56f-e09d4bc17942",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "leads"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -32
+      ],
+      "id": "9d5205c7-5394-42fb-be16-20e1b6197e5a",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "1vgmooH7wtjggpuH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3b0c372a-172b-4583-a725-c3c9f21ef4ac",
+              "leftValue": "={{ $('Merge').item.json.lead_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        960,
+        -32
+      ],
+      "id": "6cc94ed0-ef2a-4885-8326-1eaa1352f2ba",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ JSON.parse($('AI Agent').item.json.output).summary }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        -224
+      ],
+      "id": "bec26024-9609-4eed-bdab-fdc8a61443ea",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "1vgmooH7wtjggpuH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6297377855",
+        "text": "=🔔 لید قبلا هم پیام داده\n\n👤 نام:\n{{ $json.lead_name }}\n\n📞 شماره:\n{{ $json.phone }}\n\n⭐ امتیاز:\n{{ $json.lead_score }}\n\n📝 خلاصه:\n{{ $json.summary }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        -320
+      ],
+      "id": "bcdc9ee1-976b-4dfd-8eb4-3c7313aee3ce",
+      "name": "Send a text message1",
+      "webhookId": "c0f662b6-d403-4a23-ba5a-846650ea285f",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ JSON.parse($('AI Agent').item.json.output).reply_message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        -128
+      ],
+      "id": "6a22b711-804c-4594-9bcd-1eaabad09dc1",
+      "name": "Send a text message2",
+      "webhookId": "439a377e-614a-4dc3-8bcf-561fc11c4bbd",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6297377855",
+        "text": "=🔔 لید قبلا هم پیام داده\n\n👤 نام:\n{{ $json.lead_name }}\n\n📞 شماره:\n{{ $json.phone }}\n\n⭐ امتیاز:\n{{ $json.lead_score }}\n\n📝 خلاصه:\n{{ $json.summary }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        256
+      ],
+      "id": "78fecd60-3c60-48fb-b3d9-a74ef8a77b90",
+      "name": "Send a text message3",
+      "webhookId": "c0f662b6-d403-4a23-ba5a-846650ea285f",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1,
+      "position": [
+        688,
+        192
+      ],
+      "id": "b7c925a3-395e-4af5-815f-582e6a610e75",
+      "name": "Answer questions with a vector store"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        448
+      ],
+      "id": "677cb3c4-ef6f-4dbd-9ac0-0a312c265425",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "1vgmooH7wtjggpuH",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "en-gb.ir#holiday@group.v.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Holidays in Iran"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        224
+      ],
+      "id": "df5dd74f-fc88-4bb8-82c2-804e54e56ae8",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Tjmi9uOLhXlpOdEj",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message2": {
+      "main": [
+        []
+      ]
+    },
+    "Answer questions with a vector store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Answer questions with a vector store",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4e62a11e-26ea-4d52-9651-0a370c96b984",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "WTshU2zm52Buo9Ad",
+  "tags": []
+}

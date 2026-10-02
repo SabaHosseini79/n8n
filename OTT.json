@@ -1,0 +1,413 @@
+{
+  "name": "OTT",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "f42fda41-4d44-4675-ae7a-fb955c720eb3",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// برای اجرای زنده روزانه: خط پایین را فعال کنید\n// const target = new Date();\n// target.setDate(target.getDate() - 1);\n// const yesterday = target.toISOString().split('T')[0];\n\n// برای تست دستی روی دیتاست 2026 شما، یک تاریخ ثابت داخل بازه دیتاست:\n//const yesterday = \"2026-03-20\"; // یک روز از بخش افت‌کرده (روز 61-90)\n\n//const prevDate = new Date(yesterday);\n//prevDate.setDate(prevDate.getDate() - 1);\n//const dayBefore = prevDate.toISOString().split('T')[0];\n\nconst yesterday = \"2026-03-24\";\nconst dayBefore = \"2026-02-01\";\nreturn { yesterday, dayBefore };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "6893be46-4858-4da4-855a-d173ec41abfa",
+      "name": "Calculate Date"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst rawEvents = items.map(item => item.json);\n\n// حذف رکوردهای کاملاً تکراری بر اساس ترکیب session_id + event_time + event_type\nconst seen = new Set();\nconst events = rawEvents.filter(e => {\n  const key = `${e.session_id}|${e.event_time}|${e.event_type}`;\n  if (seen.has(key)) return false;\n  seen.add(key);\n  return true;\n});\n\nconst { yesterday, dayBefore } = $('Calculate Date').item.json;\n\nif (events.length === 0) {\n  return {\n    date: yesterday,\n    dayBefore,\n    dau: 0,\n    total_watch_time: 0,\n    avg_watch_time: 0,\n    avg_session_duration: 0,\n    completion_rate: 0,\n    total_sessions: 0\n  };\n}\n\nconst uniqueUsers = new Set(events.map(e => e.user_id));\nconst dau = uniqueUsers.size;\n\nconst totalWatchTime = events.reduce((sum, e) => sum + (e.watch_time_minutes || 0), 0);\n\nconst uniqueSessions = new Set(events.map(e => e.session_id));\nconst totalSessions = uniqueSessions.size;\n\nconst avgWatchTime = dau > 0 ? totalWatchTime / dau : 0;\n\nconst avgSessionDuration = totalSessions > 0\n  ? totalWatchTime / totalSessions\n  : 0;\n\nconst viewingEvents = events.filter(e => ['play', 'pause', 'complete'].includes(e.event_type));\nconst completionRate = viewingEvents.length > 0\n  ? viewingEvents.reduce((sum, e) => sum + (e.completion_percentage || 0), 0) / viewingEvents.length\n  : 0;\n\nreturn {\n  date: yesterday,\n  dayBefore,\n  dau: dau,\n  total_watch_time: Math.round(totalWatchTime * 100) / 100,\n  avg_watch_time: Math.round(avgWatchTime * 100) / 100,\n  avg_session_duration: Math.round(avgSessionDuration * 100) / 100,\n  completion_rate: Math.round(completionRate * 100) / 100,\n  total_sessions: totalSessions\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "1a4a0aa1-cd04-4538-b3a7-3abf7ed8c126",
+      "name": "Calculate KPIs"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_kpi_metrics?on_conflict=date",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"date\": \"{{ $json.date }}\",\n  \"dau\": {{ $json.dau }},\n  \"total_watch_time\": {{ $json.total_watch_time }},\n  \"avg_watch_time\": {{ $json.avg_watch_time }},\n  \"avg_session_duration\": {{ $json.avg_session_duration }},\n  \"completion_rate\": {{ $json.completion_rate }},\n  \"total_sessions\": {{ $json.total_sessions }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        176,
+        0
+      ],
+      "id": "196d380b-a292-45d8-aba8-55e5ab45f33a",
+      "name": "Save KPI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = $('Save KPI').item.json;\n\nconst prevItems = $input.all();\nconst prev = prevItems.length > 0 ? prevItems[0].json : null;\n\nfunction pctChange(curr, prev) {\n  if (prev === null || prev === undefined || prev === 0) return null;\n  return Math.round(((curr - prev) / prev) * 10000) / 100;\n}\n\nreturn {\n  date: today.date,\n  dau: today.dau,\n  total_watch_time: today.total_watch_time,\n  avg_watch_time: today.avg_watch_time,\n  avg_session_duration: today.avg_session_duration,\n  completion_rate: today.completion_rate,\n  total_sessions: today.total_sessions,\n  has_previous_day: prev !== null,\n  prev_date: prev ? prev.date : null,\n  dau_change_pct: prev ? pctChange(today.dau, prev.dau) : null,\n  watch_time_change_pct: prev ? pctChange(today.total_watch_time, prev.total_watch_time) : null,\n  avg_watch_time_change_pct: prev ? pctChange(today.avg_watch_time, prev.avg_watch_time) : null,\n  avg_session_duration_change_pct: prev ? pctChange(today.avg_session_duration, prev.avg_session_duration) : null,\n  completion_rate_change_pct: prev ? pctChange(today.completion_rate, prev.completion_rate) : null,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "fcaac61e-dc93-4ccd-83b2-f578d6028f3f",
+      "name": "Calculate KPI Changes"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bc4a9d37-381a-4ea3-851f-f1aa66dd9ccb",
+              "leftValue": "={{ $json.watch_time_change_pct }}",
+              "rightValue": -15,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "46702ed8-5876-48cb-a5e0-8767fba00974",
+              "leftValue": "={{ $json.dau_change_pct }}",
+              "rightValue": -10,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "d9d85852-13a2-49ff-b399-5e3b001b4e3e",
+              "leftValue": "={{ $json.completion_rate_change_pct }}",
+              "rightValue": -10,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            },
+            {
+              "id": "9bf61c2b-77c4-4759-b249-c41ba4f7081e",
+              "leftValue": "={{ $json.avg_session_duration_change_pct }}",
+              "rightValue": -15,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -400,
+        208
+      ],
+      "id": "a4dc6dc3-3ea6-449b-ad94-155a5fb164b5",
+      "name": "IF - Alert Required?"
+    },
+    {
+      "parameters": {
+        "chatId": "6297377855",
+        "text": "=🚨 OTT PRODUCT ALERT\n📊 WATCH TIME CRISIS\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📉 Change: {{ $json.watch_time_change_pct }}%\n📅 {{ $json.prev_date }} → {{ $json.date }}\n\n🎯 ROOT CAUSE\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📱 {{ $json.main_device }} ({{ $json.main_device_change }}%)\n🔧 v{{ $json.main_app_version }} ({{ $json.main_app_version_change }}%)\n📺 {{ $json.main_category }} ({{ $json.main_category_change }}%)\n\n⚡️ OTHER METRICS\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n👥 DAU: {{ $json.dau_change_pct }}%\n✅ Completion Rate: {{ $json.completion_rate_change_pct }}%\n⏱️ Avg Session: {{ $json.avg_session_duration_change_pct }}%\n\n🔍 ACTION\nInvestigate {{ $json.main_device }}/v{{ $json.main_app_version }} release affecting {{ $json.main_category }} content",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        208
+      ],
+      "id": "86cef9e0-f2a8-4b77-8732-3d8b141945b7",
+      "name": "Telegram Alert",
+      "webhookId": "72ac2b23-a5b5-4ed5-bcfd-01372f3fbb21",
+      "credentials": {
+        "telegramApi": {
+          "id": "ul42FegAOKaGbf26",
+          "name": "Booking_for_Dr"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const kpiChanges = $('Calculate KPI Changes').item.json;\n\nconst todayItemsRaw = $('Get Today\\'s Events').all().map(item => item.json);\nconst prevItemsRaw = $input.all().map(item => item.json);\n\nfunction dedupe(events) {\n  const seen = new Set();\n  return events.filter(e => {\n    const key = `${e.session_id}|${e.event_time}|${e.event_type}`;\n    if (seen.has(key)) return false;\n    seen.add(key);\n    return true;\n  });\n}\n\nconst todayEvents = dedupe(todayItemsRaw);\nconst prevEvents = dedupe(prevItemsRaw);\n\nfunction pctChange(curr, prev) {\n  if (prev === null || prev === undefined || prev === 0) return null;\n  return Math.round(((curr - prev) / prev) * 10000) / 100;\n}\n\nfunction breakdown(field) {\n  const todayMap = {};\n  const prevMap = {};\n  for (const e of todayEvents) {\n    todayMap[e[field]] = (todayMap[e[field]] || 0) + (e.watch_time_minutes || 0);\n  }\n  for (const e of prevEvents) {\n    prevMap[e[field]] = (prevMap[e[field]] || 0) + (e.watch_time_minutes || 0);\n  }\n  const allKeys = new Set([...Object.keys(todayMap), ...Object.keys(prevMap)]);\n  const result = [];\n  for (const key of allKeys) {\n    const t = todayMap[key] || 0;\n    const p = prevMap[key] || 0;\n    result.push({ segment: key, today: t, previous: p, change_pct: pctChange(t, p) });\n  }\n  result.sort((a, b) => (a.change_pct ?? 0) - (b.change_pct ?? 0));\n  return result;\n}\n\nconst deviceBreakdown = breakdown('device');\nconst versionBreakdown = breakdown('app_version');\nconst categoryBreakdown = breakdown('content_category');\n\nconst mainDevice = deviceBreakdown[0];\nconst mainVersion = versionBreakdown[0];\nconst mainCategory = categoryBreakdown[0];\n\nreturn {\n  ...kpiChanges,\n  change_percent: kpiChanges.watch_time_change_pct,\n  main_device: mainDevice?.segment,\n  main_device_change: mainDevice?.change_pct,\n  main_app_version: mainVersion?.segment,\n  main_app_version_change: mainVersion?.change_pct,\n  main_category: mainCategory?.segment,\n  main_category_change: mainCategory?.change_pct,\n  device_breakdown: deviceBreakdown,\n  version_breakdown: versionBreakdown,\n  category_breakdown: categoryBreakdown,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        208
+      ],
+      "id": "71dc7ae9-1d95-4ca9-a892-cb916d8bb929",
+      "name": "Identify Root Cause"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/ott_events?date=eq.{{ $('Calculate KPI Changes').item.json.prev_date }}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -176,
+        208
+      ],
+      "id": "bd98957b-373a-4461-aa26-37aacb529a61",
+      "name": "Get Previous Day's Events"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_kpi_metrics?date=lt.{{ $('Calculate Date').item.json.yesterday }}&order=date.desc&limit=1&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        0
+      ],
+      "id": "f9323250-89c8-422d-9b11-2a9753c6899e",
+      "name": "Get Previous KPI"
+    },
+    {
+      "parameters": {
+        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/ott_events?date=eq.{{$node[\"Calculate Date\"].json.yesterday}}&select=*",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "apikey",
+              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -272,
+        0
+      ],
+      "id": "33c8ab75-9b27-44f1-bcaf-73f7a2e7e35f",
+      "name": "Get Today's Events"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Calculate Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Date": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate KPIs": {
+      "main": [
+        [
+          {
+            "node": "Save KPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save KPI": {
+      "main": [
+        [
+          {
+            "node": "Get Previous KPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate KPI Changes": {
+      "main": [
+        [
+          {
+            "node": "IF - Alert Required?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Alert Required?": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Day's Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Root Cause": {
+      "main": [
+        [
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Day's Events": {
+      "main": [
+        [
+          {
+            "node": "Identify Root Cause",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous KPI": {
+      "main": [
+        [
+          {
+            "node": "Calculate KPI Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Events": {
+      "main": [
+        [
+          {
+            "node": "Calculate KPIs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0f3a7431-b921-41c8-b9ac-cfbeae1eccfd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fda3c9e1b3d094e07c783ce7db9b10d7a59d6d9a0d6681d9652b5f240f118e5"
+  },
+  "nodeGroups": [],
+  "id": "nEPwG28C7CHMarZY",
+  "tags": []
+}
