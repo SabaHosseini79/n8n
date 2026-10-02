@@ -14,17 +14,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/acquisition?select=*",
+        "url": "=[your_key]=*",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -150,17 +150,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/channel_analysis",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -203,17 +203,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/month_analysis",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -256,17 +256,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/revenue_analysis",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -317,17 +317,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/aov_analysis",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -378,17 +378,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/customer_value",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -439,17 +439,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/repeat_rate",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -500,17 +500,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/revenue_split",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
