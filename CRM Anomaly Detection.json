@@ -22,17 +22,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/crmleads?select=*&created_at=gte.2026-03-25T00:00:00&created_at=lt.2026-03-25T23:59:59&limit=10000",
+        "url": "[your_key]&created_at=gte.2026-03-25T00:00:00&created_at=lt.2026-03-25T23:59:59&limit=10000",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -67,17 +67,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_snapshots",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -114,17 +114,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_snapshots?snapshot_date=eq.2026-03-24&select=*",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -180,17 +180,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/crm_alerts",
+        "url": "[your_key]",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
