@@ -47,13 +47,13 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_kpi_metrics?on_conflict=date",
+        "url": "[your_key]/daily_kpi_metrics?on_conflict=date",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -61,7 +61,7 @@
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Prefer",
@@ -195,13 +195,13 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/ott_events?date=eq.{{ $('Calculate KPI Changes').item.json.prev_date }}&select=*",
+        "url": "[your_key]/ott_events?date=eq.{{ $('Calculate KPI Changes').item.json.prev_date }}&select=*",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
@@ -209,7 +209,7 @@
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             }
           ]
         },
@@ -226,17 +226,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/daily_kpi_metrics?date=lt.{{ $('Calculate Date').item.json.yesterday }}&order=date.desc&limit=1&select=*",
+        "url": "[your_key]/daily_kpi_metrics?date=lt.{{ $('Calculate Date').item.json.yesterday }}&order=date.desc&limit=1&select=*",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             }
           ]
         },
@@ -253,17 +253,17 @@
     },
     {
       "parameters": {
-        "url": "=https://hijxjcasujhjsaweccmu.supabase.co/rest/v1/ott_events?date=eq.{{$node[\"Calculate Date\"].json.yesterday}}&select=*",
+        "url": "[your_key]/ott_events?date=eq.{{$node[\"Calculate Date\"].json.yesterday}}&select=*",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "apikey",
-              "value": "=sb_publishable_0diRcRqVWKpIZy8Pxthetg_2-9rJJ5F"
+              "value": "[your_key]"
             },
             {
               "name": "Content-Type",
